@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 from ddi_gnn.data import DdiData
 
@@ -9,7 +10,9 @@ SPLIT_COLORS = {"train": "#377eb8", "valid": "#4daf4a", "test": "#ff7f00"}
 
 
 def plot_learning(
-    metrics: pd.DataFrame, splits: tuple[str, ...] = ("train", "valid")
+    metrics: pd.DataFrame,
+    splits: tuple[str, ...] = ("train", "valid"),
+    best_epoch: int | None = None,
 ) -> plt.Figure:
     """Plots loss and Hits@20 per epoch, with a band of one std around each line."""
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
@@ -29,6 +32,8 @@ def plot_learning(
                 alpha=0.2,
                 linewidth=0,
             )
+        if best_epoch is not None:
+            ax.axvline(best_epoch, color="gray", linestyle="--", label="Best epoch")
         ax.set_title(title)
         ax.set_xlabel("Epoch")
         ax.set_ylabel(title)
@@ -79,4 +84,82 @@ def plot_graph(data: DdiData, figsize: tuple[int, int] = (20, 20)) -> plt.Figure
         text.set_rotation(angle)
         text.set_rotation_mode("anchor")
 
+    return fig
+
+
+def plot_sweep(
+    summary: pd.DataFrame,
+    param: str,
+    splits: tuple[str, ...] = ("train", "valid"),
+    title: str | None = None,
+) -> plt.Figure:
+    """Plots mean Hits@20 (with std over seeds as error bars) for each value of `param`."""
+    fig, ax = plt.subplots(figsize=(7, 3.5))
+    width = 0.8 / len(splits)
+    positions = np.arange(len(summary))
+
+    for i, split in enumerate(splits):
+        ax.bar(
+            positions + (i - (len(splits) - 1) / 2) * width,
+            summary[f"{split}_mean"],
+            width,
+            yerr=summary[f"{split}_std"].fillna(0),
+            capsize=3,
+            color=SPLIT_COLORS[split],
+            label=split.title(),
+        )
+
+    ax.set_xticks(positions, summary[param].astype(str))
+    ax.set_ylim(0, 1)
+    ax.set_xlabel(param)
+    ax.set_ylabel("Hits@20 (best validation epoch)")
+    if title:
+        ax.set_title(title)
+    ax.legend()
+    fig.tight_layout()
+    return fig
+
+
+def plot_heatmap(
+    summary: pd.DataFrame,
+    index: list[str],
+    columns: str,
+    value: str = "valid_mean",
+    title: str | None = None,
+) -> plt.Figure:
+    """Plots `value` of a summary table as a heatmap (one row per `index` combination)."""
+    table = summary.pivot_table(index=index, columns=columns, values=value)
+    fig, ax = plt.subplots(figsize=(1.6 * table.shape[1] + 2, 0.5 * table.shape[0] + 1.5))
+    sns.heatmap(table, annot=True, fmt=".3f", cmap="viridis", ax=ax)
+    ax.set_xlabel("")
+    if title:
+        ax.set_title(title)
+    fig.tight_layout()
+    return fig
+
+
+def plot_results(results: pd.DataFrame) -> plt.Figure:
+    """Plots the final Hits@20 of each dataset and split."""
+    fig, ax = plt.subplots(figsize=(7, 3.5))
+    datasets = list(results["dataset"].unique())
+    splits = [s for s in ("train", "valid", "test") if s in set(results["split"])]
+    width = 0.8 / len(splits)
+
+    for i, split in enumerate(splits):
+        rows = results[results["split"] == split].set_index("dataset").loc[datasets]
+        ax.bar(
+            np.arange(len(datasets)) + (i - (len(splits) - 1) / 2) * width,
+            rows["mean"],
+            width,
+            yerr=rows["std"].fillna(0),
+            capsize=3,
+            color=SPLIT_COLORS[split],
+            label=split.title(),
+        )
+
+    ax.set_xticks(np.arange(len(datasets)), datasets)
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("Hits@20")
+    ax.legend()
+    fig.tight_layout()
     return fig
