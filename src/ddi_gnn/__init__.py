@@ -1,0 +1,1 @@
+"""Drug-drug interaction prediction with GNNs (a GraphSAGE model) on ogbl-ddi dataset."""

@@ -1,0 +1,15 @@
+# Data and training outputs
+datasets/
+models/
+
+# Python
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
