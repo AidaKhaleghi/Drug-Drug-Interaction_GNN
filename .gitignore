@@ -2,6 +2,9 @@
 datasets/
 models/
 
+# Results
+results/*.csv
+
 # Python
 __pycache__/
 *.egg-info/
