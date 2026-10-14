@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from ddi_gnn.data import DdiData, Graph, Pairs
 from ddi_gnn.losses import LOSSES
@@ -67,7 +67,12 @@ def train(
     logger = MetricsLogger()
     train_eval = make_train_eval_pairs(data)
     best_hits, best_epoch, best_state = -1.0, 0, None
-    progress = tqdm(range(num_epochs), leave=False)
+    progress = tqdm(
+        range(num_epochs),
+        desc="Training",
+        leave=True,
+        position=1,
+    )
 
     for epoch in progress:
         progress.set_description(f"Epoch {epoch + 1}")

@@ -40,7 +40,7 @@ def run_sweep(
 ) -> pd.DataFrame:
     """Runs every candidate with all seeds."""
     runs = []
-    for candidate in tqdm(candidates, desc=prefix):
+    for candidate in tqdm(candidates, desc=prefix, position=0):
         name = f"{prefix}/" + "_".join(f"{k}-{v}" for k, v in candidate.items())
         result = run_seeds(name, data, {**base_params, **candidate}, seeds, **kwargs)
         runs.append(result.assign(**candidate))
